@@ -82,6 +82,8 @@ class MyFirstGUI:
             ins.minsize(200,200)
             ins_gui = InsGUI(ins)
             ins.mainloop()
+        if(self.v.get()==0):
+            
          
 root = Tk()
 root.minsize(200,200)
