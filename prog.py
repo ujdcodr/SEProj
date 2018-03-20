@@ -24,7 +24,7 @@ class CMSapp(tk.Tk):
 
         self.frames = {}
 
-        for F in (StartPage, PageOne, PageTwo, PageThree, PageSix, PageSeven):
+        for F in (StartPage, PageOne, PageTwo, PageThree, PageFour, PageFive,PageSix,PageSeven):
 
             frame = F(container, self)
 
@@ -109,6 +109,64 @@ class StartPage(tk.Frame):
          
         login = tk.Button(self, text="Login", command=log)
         login.pack(side="bottom")
+        
+        
+        def sign():
+            n = name.get()
+            p = passw.get()
+            name.delete(0, 'end')
+            passw.delete(0, 'end')
+            
+            if n=="" or p=="":
+                tkMessageBox.showinfo("Option", "Please enter all login credentials")
+            else:
+                            
+                print(v.get())
+                if(v.get()==1):
+                    m = (str(n),) 
+                    c.execute('SELECT count(*) FROM Student where Name =?',m)
+                    r = c.fetchone()
+                    if(r[0]==0):
+                        c.execute('SELECT count(*) FROM Student')
+                        l = c.fetchone()
+                        t = (l[0]+1,str(n),str(p),'IT')
+                        c.execute('INSERT into Student VALUES (?,?,?,?)', t)
+                        x = (l[0]+1,str(n))
+                        c.execute('INSERT into Logged VALUES (?,?)', x)
+                        conn.commit() 
+                        
+                        print("Student Logged In")
+                        tkMessageBox.showinfo("stud", "New Student Signed up")
+                        controller.show_frame(PageOne)
+                    else:
+                        tkMessageBox.showinfo("st", "Account already exists")    
+                
+                if(v.get()==2):
+                    m = (str(n),) 
+                    c.execute('SELECT count(*) FROM Instructor where Name =?',m)
+                    r = c.fetchone()
+                    if(r[0]==0):
+                        c.execute('SELECT count(*) FROM Instructor')
+                        l = c.fetchone()
+                        t = (l[0]+1,str(n),str(p))
+                        c.execute('INSERT into Instructor VALUES (?,?,?)', t)
+                        x = (l[0]+1,str(n))
+                        c.execute('INSERT into Logged VALUES (?,?)', x)
+                        conn.commit() 
+                        
+                        print("Instructor Logged In")
+                        tkMessageBox.showinfo("in", "New Instructor Signed up")
+                        controller.show_frame(PageOne)
+                    else:
+                        tkMessageBox.showinfo("ins", "Account already exists")    
+                
+                if(v.get()==0):
+                    tkMessageBox.showinfo("Option", "Please choose one option(Student/Instructor)")
+                
+        
+        signup = tk.Button(self, text="Sign Up", command=sign)
+        signup.pack(side="bottom")
+        
            
         
 class PageOne(tk.Frame):
@@ -146,9 +204,9 @@ class PageOne(tk.Frame):
         T = tk.Text(self,height=20, width=40)
         T.pack()            
         button3 = tk.Button(self, text="View your Courses taken",
-                            command=show)
+                            command=lambda: controller.show_frame(PageFive))
         button3.pack()
-
+        
 
 class PageTwo(tk.Frame):
 
@@ -192,7 +250,7 @@ class PageTwo(tk.Frame):
         
 
         button2 = tk.Button(self, text="View Your Courses offered",
-                            command=show)
+                            command=lambda: controller.show_frame(PageSeven))
         button2.pack()
         
         button3 = tk.Button(self, text="Create new course",
@@ -200,7 +258,7 @@ class PageTwo(tk.Frame):
         button3.pack()
         
         button4 = tk.Button(self, text="View students enrolled in your courses",
-                            command=show_stud)
+                            command=lambda: controller.show_frame(PageFour))
         button4.pack()
 
 
@@ -226,13 +284,20 @@ class PageThree(tk.Frame):
                 conn.commit()
                 tkMessageBox.showinfo("Course reg", "Successfully enrolled for " +row[1])
                 
-                bt[row[0]-1].destroy() 
+                #bt[row[0]-1].destroy() 
             
-        
-        for row in c.execute('SELECT * FROM Course'):
-            b = tk.Button(self, text=str(row[0]) + " " + str(row[1]) + " (" + str(row[3]) + ")",command=lambda row=row: onClick(row))
-            b.pack()
-            bt.append(b)   
+        '''
+        c.execute('Select * from Logged')
+        r = c.fetchone()
+        print r[0]
+        '''
+        def show():
+            for row in c.execute('SELECT * FROM Course'):
+                b = tk.Button(self, text=str(row[0]) + " " + str(row[1]) + " (" + str(row[3]) + ")",command=lambda row=row: onClick(row))
+                b.pack()
+                bt.append(b)
+                   
+                    
         
         def out():
             c.execute('DELETE FROM Logged')
@@ -245,15 +310,53 @@ class PageThree(tk.Frame):
         button2 = tk.Button(self, text="Back to Previous",
                             command=lambda: controller.show_frame(PageOne))
         button2.pack(side="bottom")
+        button3 = tk.Button(self, text="Show courses",
+                            command=show)
+        button3.pack(side="bottom")
+ 
 
-'''
 class PageFour(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-        label = tk.Label(self, text="Your offered courses", font=LARGE_FONT)
+        label = tk.Label(self, text="Enrolled Students(Click to remove)", font=LARGE_FONT)
         label.pack(pady=10,padx=10)
         
+        bt = []
+        
+        def onClick(row):
+            #l = (row[0],row[2],)
+            c.execute('select count(*) from Studtake where Num=? and Code=?',(row[0],row[2]))
+            x  = c.fetchone()
+            c.execute('delete from Studtake where Num=? and Code=?',(row[0],row[2]))
+            c.execute('select count(*) from Studtake where Num=? and Code=?',(row[0],row[2]))
+            r = c.fetchone()
+            if(r[0]==x[0]):
+                tkMessageBox.showinfo("Course already", "Student has already been removed: " +row[1])
+            else:
+                conn.commit()
+                tkMessageBox.showinfo("Course drop", "Successfully removed " +row[1])
+            '''
+            #else:
+            t = (r[0],r[1],row[0],row[1],row[2],row[3])
+            c.execute('INSERT into Studtake VALUES (?,?,?,?,?,?)', t)
+            '''
+                
+            #bt[row[0]-1].destroy()
+        
+        def show():
+            bt = []
+            c.execute('SELECT * from Logged')
+                  
+            r = c.fetchone()
+            x = (r[0],)
+            for row in c.execute('SELECT * FROM Studtake where Ins=?',x):
+                b = tk.Button(self, text=str(row[0]) + " " + str(row[1]) + " (" + str(row[3]) + ")",command=lambda row=row: onClick(row))
+                b.pack()
+                bt.append(b)   
+        
+            
+                
         
         
         
@@ -269,22 +372,56 @@ class PageFour(tk.Frame):
         button2 = tk.Button(self, text="Back to Previous",
                             command=lambda: controller.show_frame(PageTwo))
         button2.pack(side="bottom")
+        
+        button3 = tk.Button(self, text="View students enrolled",
+                            command=show)
+        button3.pack(side="bottom")
 
 
 class PageFive(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-        label = tk.Label(self, text="Your courses taken", font=LARGE_FONT)
+        label = tk.Label(self, text="Your courses taken(click to drop)", font=LARGE_FONT)
         label.pack(pady=10,padx=10)
+        bt = []
         
-        for row in c.execute('SELECT * from Logged'):
-            print row
+        def onClick(row):
+            #l = (row[0],row[2],)
+            c.execute('select count(*) from Studtake where Num=? and Code=?',(row[0],row[2]))
+            x  = c.fetchone()
+            c.execute('delete from Studtake where Num=? and Code=?',(row[0],row[2]))
+            c.execute('select count(*) from Studtake where Num=? and Code=?',(row[0],row[2]))
+            r = c.fetchone()
+            if(r[0]==x[0]):
+                tkMessageBox.showinfo("Course already", "Course has already been dropped: " +row[3])
+            
+            else:
+                conn.commit()
+                tkMessageBox.showinfo("Course drop", "Successfully dropped " +row[3])
+            
+            '''
+            if(len(c.fetchall())):
+                tkMessageBox.showinfo("Course already", "You have already enrolled for " +row[1])
+            
+            #else:
+            t = (r[0],r[1],row[0],row[1],row[2],row[3])
+            c.execute('INSERT into Studtake VALUES (?,?,?,?,?,?)', t)
+            '''
+                
+            #bt[row[0]-1].destroy()
         
+        def show():
+            bt = []
+            c.execute('SELECT * from Logged')
+                  
+            r = c.fetchone()
+            x = (r[0],)
+            for row in c.execute('SELECT * FROM Studtake where Num=?',x):
+                b = tk.Button(self, text=str(row[2]) + " " + str(row[3]) + " (" + str(row[5]) + ")",command=lambda row=row: onClick(row))
+                b.pack()
+                bt.append(b)   
         
-        x = (str(r[0]),)
-        for row in c.execute('SELECT * FROM Studtake where Num=?',x):
-            print row   
             
                 
         def out():
@@ -299,7 +436,14 @@ class PageFive(tk.Frame):
         button2 = tk.Button(self, text="Back to Previous",
                             command=lambda: controller.show_frame(PageOne))
         button2.pack(side="bottom")
-'''
+        
+        button3 = tk.Button(self, text="Show courses",
+                            command=show)
+        button3.pack(side="bottom")
+        
+
+
+
 class PageSix(tk.Frame):
 
     def __init__(self, parent, controller):
@@ -380,9 +524,48 @@ class PageSeven(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-        label = tk.Label(self, text="Students enrolled in your courses", font=LARGE_FONT)
+        label = tk.Label(self, text="Your Courses offered(click to Withdraw)", font=LARGE_FONT)
         label.pack(pady=10,padx=10)
         
+        bt = []
+        
+        def onClick(row):
+            #l = (row[0],row[2],)
+            c.execute('select count(*) from Studtake where Ins=? and CName=?',(row[2],row[1]))
+            x  = c.fetchone()
+            
+            c.execute('delete from Studtake where Ins=? and CName=?',(row[2],row[1]))
+            c.execute('delete from Course where Ins=? and CName=?',(row[2],row[1]))
+            c.execute('select count(*) from Studtake where Ins=? and CName=?',(row[2],row[1]))
+            r = c.fetchone()
+            if(r[0]==x[0]):
+                tkMessageBox.showinfo("Course already", "Course has already been withdrawn: " +row[1])
+            
+            else:
+                conn.commit()
+                tkMessageBox.showinfo("Course drop", "Successfully withdrew " +row[1])
+            
+            '''
+            if(len(c.fetchall())):
+                tkMessageBox.showinfo("Course already", "You have already enrolled for " +row[1])
+            
+            #else:
+            t = (r[0],r[1],row[0],row[1],row[2],row[3])
+            c.execute('INSERT into Studtake VALUES (?,?,?,?,?,?)', t)
+            '''
+                
+            #bt[row[0]-1].destroy()
+        
+        def show():
+            bt = []
+            c.execute('SELECT * from Logged')
+                  
+            r = c.fetchone()
+            x = (r[0],)
+            for row in c.execute('SELECT * FROM Course where Ins=?',x):
+                b = tk.Button(self, text=str(row[0]) + " " + str(row[1]) + " (" + str(row[3]) + ")",command=lambda row=row: onClick(row))
+                b.pack()
+                bt.append(b) 
         
         def out():
             c.execute('DELETE FROM Logged')
@@ -395,7 +578,10 @@ class PageSeven(tk.Frame):
         button2 = tk.Button(self, text="Back to Previous",
                             command=lambda: controller.show_frame(PageTwo))
         button2.pack(side="bottom")
-
+        
+        button3 = tk.Button(self, text="Show courses",command=show)
+        button3.pack(side="bottom")
+        
 
 
 app = CMSapp()
